@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Admin Dashboard CGPP</title>
+<style>
+  :root{--orange:#FF8833;--midnight:#1D418C;--ink:#1C2E57;--muted:#5F6B86;--bg:#F1F5F7;--line:#E1E8EC;--ok:#0a7d4f;--bad:#b3261e}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+  header{background:var(--midnight);color:#fff;padding:20px 16px;border-bottom:4px solid var(--orange)}
+  header h1{margin:0 auto;max-width:640px;font-size:18px}
+  main{max-width:640px;margin:24px auto;padding:0 16px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+  label{display:block;font-weight:600;margin:0 0 6px}
+  input[type=password],input[type=file]{width:100%;padding:10px;border:1px solid #CFD9DF;border-radius:10px;font:inherit;background:#fff;margin-bottom:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  button{font:inherit;font-weight:600;padding:10px 18px;border-radius:10px;border:1px solid var(--midnight);background:#fff;color:var(--midnight);cursor:pointer}
+  button.primary{background:var(--orange);border-color:var(--orange);color:#fff}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button:focus-visible,input:focus-visible{outline:3px solid #FFB77F;outline-offset:2px}
+  .hint{color:var(--muted);font-size:13px}
+  #out:empty{display:none}
+  .ok{color:var(--ok)} .bad{color:var(--bad)}
+  ul{padding-left:18px;margin:6px 0} a{color:var(--midnight)}
+</style>
+</head>
+<body>
+<header><h1>Admin · Update Data Dashboard CGPP</h1></header>
+<main>
+  <form class="card" id="f">
+    <label for="pw">Password admin</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+    <label for="file">File Excel ITT (.xlsx)</label>
+    <input type="file" id="file" accept=".xlsx" required>
+    <div class="row">
+      <button type="submit" id="bCheck">1. Cek file</button>
+      <button type="button" class="primary" id="bPub" disabled>2. Publikasikan</button>
+    </div>
+    <p class="hint">“Cek file” membaca Excel tanpa mengubah dashboard, lalu mencocokkan hasilnya dengan sheet Summary. Setelah dipublikasikan, dashboard publik ter-update dalam ±1 menit.</p>
+  </form>
+  <div class="card" id="out" aria-live="polite"></div>
+  <p class="hint"><a href="/">← Lihat dashboard publik</a></p>
+</main>
+<script>
+  var f = document.getElementById('f'), out = document.getElementById('out'), bPub = document.getElementById('bPub');
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function send(dry){
+    var file = document.getElementById('file').files[0];
+    if (!file) return;
+    var btns = f.querySelectorAll('button'); btns.forEach(function(b){ b.disabled = true; });
+    out.innerHTML = dry ? 'Membaca file…' : 'Mempublikasikan…';
+    fetch('/api/upload' + (dry ? '?dry=1' : ''), {
+      method: 'POST', body: file,
+      headers: { 'x-admin-password': document.getElementById('pw').value, 'x-filename': encodeURIComponent(file.name) }
+    }).then(function(r){ return r.json().catch(function(){ return { error: 'Server error (' + r.status + ')' }; }); })
+      .then(function(j){
+        btns.forEach(function(b){ b.disabled = false; });
+        if (j.error){ out.innerHTML = '<b class="bad">✕ ' + esc(j.error) + '</b>'; bPub.disabled = true; return; }
+        var s = j.summary;
+        out.innerHTML = (j.published ? '<b class="ok">✓ Dashboard sudah di-update.</b> <a href="/" target="_blank">Buka dashboard</a>' : '<b>Hasil cek file</b>') +
+          '<ul><li>File: ' + esc(s.file) + '</li><li>' + s.indicators + ' indikator · ' + s.levels + ' wilayah · ' + esc(s.fy) + '</li>' +
+          '<li>Bulan: ' + esc(s.months.join(', ')) + '</li><li>Bulan berjalan (Summary!D3): <b>' + esc(s.currentMonth) + '</b></li></ul>' +
+          (j.warnings.length
+            ? '<p class="bad"><b>⚠ Hitungan tidak cocok dengan sheet Summary:</b></p><ul class="bad">' + j.warnings.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>'
+            : '<p class="ok">✓ Klasifikasi capaian cocok dengan sheet Summary di semua wilayah & bulan.</p>');
+        bPub.disabled = j.published;
+      })
+      .catch(function(){ btns.forEach(function(b){ b.disabled = false; }); out.innerHTML = '<b class="bad">✕ Gagal menghubungi server.</b>'; });
+  }
+  f.addEventListener('submit', function(e){ e.preventDefault(); send(true); });
+  bPub.addEventListener('click', function(){ send(false); });
+  document.getElementById('file').addEventListener('change', function(){ bPub.disabled = true; out.innerHTML = ''; });
+</script>
+</body>
+</html>
