@@ -451,7 +451,7 @@
       </div>
       <div class="period">
         <span class="dot"></span>
-        <b>Data Last Updated: September 18, 2026</b>
+        <b>Data Last Updated: <span id="mUpdated">September 18, 2026</span></b>
       </div>
     </div>
   </div>
@@ -745,6 +745,8 @@ function boot(){
 
     void 0;
     el('mSource').textContent = META.source || '';
+    var up = META.updated && new Date(META.updated);
+    if(up && !isNaN(up)) el('mUpdated').textContent = up.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'Asia/Jakarta'});
   }
   // ====== indicator search autocomplete ======
   var acIdx=-1;
