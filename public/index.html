@@ -451,7 +451,7 @@
       </div>
       <div class="period">
         <span class="dot"></span>
-        <b>Data Last Updated: <span id="mUpdated">—</span></b>
+        <b>Data Last Updated: September 18, 2026</b>
       </div>
     </div>
   </div>
@@ -1293,7 +1293,6 @@ function boot(){
   render();
   (function(){ var sc=el('tableScroll'); if(sc) sc.addEventListener('scroll', updateScrollFade, {passive:true});
     window.addEventListener('resize', function(){ requestAnimationFrame(updateScrollFade); }, {passive:true}); })();
-  var up=META.updated&&new Date(META.updated); if(up&&!isNaN(up)) el('mUpdated').textContent=up.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
 }
 // Data diambil dari /api/data (hasil upload admin); fallback ke data.json bawaan.
 fetch('/api/data',{cache:'no-store'})
