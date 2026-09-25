@@ -1,10 +1,10 @@
 import { head } from "@vercel/blob";
-import { BLOB_PATH } from "./upload.js";
+import { BLOB_PATH, blobToken } from "./upload.js";
 
 // Data terbaru dari Vercel Blob; kalau belum pernah upload, pakai public/data.json.
 export async function GET(req) {
   try {
-    const b = await head(BLOB_PATH);
+    const b = await head(BLOB_PATH, { token: blobToken() });
     const r = await fetch(`${b.url}?v=${new Date(b.uploadedAt).getTime()}`);
     if (!r.ok) throw new Error("blob " + r.status);
     return new Response(r.body, {
